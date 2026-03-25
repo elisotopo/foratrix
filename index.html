@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foratrix — Calcul Matériaux</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&family=Share+Tech+Mono&display=swap');
+:root{
+  --bg:#f5f7fa;--bg2:#eef1f6;--card:#ffffff;--card2:#f0f3f8;--inp:#e8edf5;--bord:#c8d0e0;
+  --acc:#1a5aaa;--acc2:#2a6abb;--acc3:#0a3a7a;--ok:#1a8a4a;--warn:#d07020;--err:#cc2020;
+  --txt:#1a2035;--txt2:#4a5a7a;--txt3:#2a3a5a;
+  --CIM1:#c8860a;--CIM2:#a03010;--MASSIF:#2a8a2a;--ARGILE:#7a4a10;
+  --CAS1:#3a5f9a;--CAS2:#4a9abf;--CAP:#888;
+  --mono:'Share Tech Mono',monospace;--head:'Barlow Condensed',sans-serif;--body:'Barlow',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--txt);font-family:var(--body);min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(100,130,180,.06) 39px,rgba(100,130,180,.06) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(100,130,180,.04) 39px,rgba(100,130,180,.04) 40px);pointer-events:none;z-index:0;}
+.wrap{position:relative;z-index:1;max-width:1140px;margin:0 auto;padding:0 20px 60px;}
+header{display:flex;align-items:center;gap:14px;padding:20px 0 14px;border-bottom:2px solid var(--acc);margin-bottom:0;}
+.logo{font-family:var(--head);font-size:2.2rem;font-weight:800;color:var(--acc);letter-spacing:.04em;line-height:1;}
+.logo span{color:var(--txt2);font-weight:400;font-size:.95rem;margin-left:8px;}
+.badge{background:var(--acc3);color:var(--acc2);font-family:var(--head);font-size:.72rem;font-weight:700;padding:3px 8px;border-radius:3px;}
+.nav-tabs{display:flex;gap:0;margin-left:auto;}
+.tab-btn{padding:8px 18px;border:1px solid var(--bord);background:var(--card2);color:var(--txt2);cursor:pointer;font-family:var(--head);font-size:.85rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;transition:all .2s;}
+.tab-btn:first-child{border-radius:4px 0 0 4px;}
+.tab-btn:last-child{border-radius:0 4px 4px 0;border-left:none;}
+.tab-btn.active{background:var(--acc);color:var(--bg);border-color:var(--acc);}
+.view{display:none;padding-top:20px;}.view.active{display:block;}
+.stepper{display:flex;align-items:center;margin-bottom:32px;gap:0;}
+.st-wrap{position:relative;display:flex;align-items:center;flex-shrink:0;}
+.st-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--head);font-size:.8rem;font-weight:700;flex-shrink:0;transition:all .3s;}
+.st-lbl{position:absolute;top:32px;font-size:.62rem;font-family:var(--head);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;left:50%;transform:translateX(-50%);}
+.st-line{flex:1;height:2px;transition:background .3s;}
+.panel{display:none;animation:fadeUp .3s ease;}.panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border:1px solid var(--bord);border-radius:6px;margin-bottom:14px;overflow:hidden;}
+.card-hd{background:var(--card2);padding:9px 15px;font-family:var(--head);font-size:.95rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--bord);}
+.card-bd{padding:14px;}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;}
+.fields.c3{grid-template-columns:1fr 1fr 1fr;}.fields.c1{grid-template-columns:1fr;}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:.75rem;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.08em;}
+.field-row{display:flex;}
+input[type=number],input[type=text]{flex:1;background:var(--inp);border:1px solid var(--bord);border-right:none;color:var(--txt);font-family:var(--mono);font-size:.92rem;padding:7px 9px;border-radius:4px 0 0 4px;outline:none;transition:border-color .2s;-moz-appearance:textfield;}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
+input:focus{border-color:var(--acc);box-shadow:0 0 0 2px rgba(240,160,32,.1);}
+.unit{background:var(--card2);border:1px solid var(--bord);border-left:none;color:var(--txt2);font-size:.72rem;font-weight:600;padding:7px 8px;border-radius:0 4px 4px 0;white-space:nowrap;display:flex;align-items:center;}
+.big-choice{display:flex;gap:10px;}
+.choice-btn{flex:1;padding:12px 8px;border:2px solid var(--bord);border-radius:6px;background:var(--card2);cursor:pointer;text-align:center;transition:all .2s;font-family:var(--head);}
+.choice-btn:hover{border-color:var(--acc);}.choice-btn.selected{border-color:var(--acc);background:rgba(240,160,32,.08);}
+.choice-num{font-size:1.8rem;font-weight:800;color:var(--acc);line-height:1;}
+.choice-label{font-size:.78rem;color:var(--txt3);margin-top:2px;letter-spacing:.05em;text-transform:uppercase;font-weight:700;}
+.choice-sub{font-size:.67rem;color:var(--txt2);margin-top:2px;}
+.mat-choice{display:flex;gap:8px;margin-top:10px;}
+.mat-btn{flex:1;padding:9px;border:1px solid var(--bord);border-radius:4px;background:var(--card2);cursor:pointer;text-align:center;transition:all .2s;}
+.mat-btn:hover{border-color:var(--acc);}.mat-btn.sel{border-color:var(--MASSIF);background:rgba(42,138,42,.1);}
+.mat-btn .mn{font-family:var(--head);font-size:.88rem;font-weight:700;color:var(--ok);}
+.mat-btn .ms{font-size:.68rem;color:var(--txt2);}
+.toggle-row{display:flex;align-items:center;gap:10px;margin-top:8px;}
+.toggle{position:relative;width:38px;height:20px;cursor:pointer;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--bord);border-radius:10px;transition:.3s;}
+.toggle-slider:before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:var(--txt2);border-radius:50%;transition:.3s;}
+.toggle input:checked+.toggle-slider{background:var(--acc);}
+.toggle input:checked+.toggle-slider:before{transform:translateX(18px);background:var(--bg);}
+.toggle-lbl{font-size:.85rem;color:var(--txt3);}
+.nav{display:flex;gap:10px;margin-top:18px;align-items:center;}
+.btn-next{background:var(--acc);color:var(--bg);border:none;font-family:var(--head);font-size:1rem;font-weight:800;letter-spacing:.08em;padding:10px 24px;border-radius:4px;cursor:pointer;text-transform:uppercase;transition:background .2s;box-shadow:0 3px 12px rgba(240,160,32,.2);}
+.btn-next:hover{background:var(--acc2);}
+.btn-back{background:var(--inp);color:var(--txt2);border:1px solid var(--bord);font-size:.88rem;font-weight:600;padding:10px 18px;border-radius:4px;cursor:pointer;transition:all .2s;}
+.btn-back:hover{background:var(--bord);color:var(--txt);}
+.btn-pdf{background:#c0392b;color:#fff;border:none;font-family:var(--head);font-size:.95rem;font-weight:800;padding:10px 20px;border-radius:4px;cursor:pointer;letter-spacing:.06em;}
+.btn-pdf:hover{filter:brightness(1.15);}
+.btn-save{background:var(--ok);color:var(--bg);border:none;font-family:var(--head);font-size:.95rem;font-weight:800;letter-spacing:.06em;padding:10px 20px;border-radius:4px;cursor:pointer;transition:filter .2s;}
+.btn-save:hover{filter:brightness(1.1);}
+.btn-reset{background:transparent;color:var(--txt2);border:1px solid var(--bord);font-size:.82rem;padding:7px 12px;border-radius:4px;cursor:pointer;transition:all .2s;}
+.btn-reset:hover{color:var(--err);border-color:var(--err);}
+.errbox{background:rgba(224,80,80,.1);border:1px solid rgba(224,80,80,.35);border-radius:4px;color:#f08080;padding:8px 12px;font-size:.85rem;margin-bottom:10px;display:none;}
+.errbox.show{display:block;}
+.hint{font-family:var(--mono);font-size:.68rem;color:var(--txt2);background:var(--bg2);border-left:3px solid var(--acc3);padding:5px 9px;border-radius:0 3px 3px 0;margin-top:8px;line-height:1.7;}
+.res-layout{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:start;}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.res-block{background:var(--card);border:1px solid var(--bord);border-radius:6px;overflow:hidden;}
+.res-hd{background:var(--card2);padding:8px 13px;font-family:var(--head);font-size:.9rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--bord);}
+.res-bd{padding:6px 0 5px;}
+.res-row{display:flex;align-items:baseline;justify-content:space-between;padding:3px 12px;border-bottom:1px solid rgba(46,58,85,.35);}
+.res-row:last-child{border-bottom:none;}
+.res-lbl{font-size:.8rem;color:var(--txt3);}
+.res-val{font-family:var(--mono);font-size:.88rem;color:var(--txt);}
+.res-unit{font-size:.68rem;color:var(--txt2);margin-left:4px;}
+.res-row.hi .res-lbl{color:var(--txt);font-weight:600;}
+.res-row.hi .res-val{color:var(--acc2);font-size:.95rem;font-weight:700;}
+.res-row.big .res-val{color:var(--ok);font-size:1rem;font-weight:700;}
+.res-row.sub .res-lbl{color:var(--txt2);font-size:.72rem;}
+.res-sep{height:1px;background:var(--bord);margin:4px 12px;}
+.schema-card{background:var(--card);border:1px solid var(--bord);border-radius:6px;overflow:hidden;position:sticky;top:10px;}
+.schema-hd{background:var(--card2);padding:8px 13px;font-family:var(--head);font-size:.9rem;font-weight:700;color:var(--acc);letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--bord);}
+.schema-inner{padding:12px;background:#e8edf8;border-radius:4px;}
+.legend{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;border-top:1px solid var(--bord);}
+.leg-item{display:flex;align-items:center;gap:4px;font-size:.65rem;color:var(--txt2);font-family:var(--head);}
+.leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.hist-empty{text-align:center;padding:60px 20px;color:var(--txt2);font-size:.95rem;}
+.hist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px;}
+.hist-card{background:var(--card);border:1px solid var(--bord);border-radius:6px;overflow:hidden;transition:all .2s;}
+.hist-card:hover{border-color:var(--acc);box-shadow:0 4px 16px rgba(26,90,170,.15);transform:translateY(-1px);}
+.hist-hd{background:var(--card2);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bord);}
+.hist-name{font-family:var(--head);font-size:1rem;font-weight:700;color:var(--acc);}
+.hist-meta{font-size:.7rem;color:var(--txt2);margin-top:2px;}
+.hist-type{font-size:.7rem;font-family:var(--head);font-weight:700;padding:2px 7px;border-radius:3px;background:var(--bord);color:var(--txt3);}
+.hist-body{padding:10px 14px;display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;}
+.hist-data-rows{font-size:.75rem;}
+.hist-row{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid rgba(46,58,85,.3);}
+.hist-row:last-child{border-bottom:none;}
+.hist-rl{color:var(--txt2);}
+.hist-rv{font-family:var(--mono);color:var(--txt);font-size:.72rem;}
+.hist-sec{font-family:var(--head);font-size:.72rem;font-weight:700;margin:6px 0 2px;letter-spacing:.05em;}
+.hist-actions{display:flex;gap:8px;padding:8px 14px;border-top:1px solid var(--bord);background:var(--card2);}
+.btn-edit{background:var(--acc);color:var(--bg);border:none;font-family:var(--head);font-size:.8rem;font-weight:700;padding:6px 14px;border-radius:3px;cursor:pointer;letter-spacing:.05em;transition:background .2s;}
+.btn-edit:hover{background:var(--acc2);}
+.btn-del{background:transparent;border:1px solid #cc2020;color:#cc2020;padding:6px 14px;border-radius:3px;cursor:pointer;font-size:1.1rem;}
+.btn-del:hover{background:#fff0f0;}
+.btn-del:hover{color:var(--err);border-color:var(--err);}
+footer{text-align:center;color:var(--txt2);font-size:.72rem;margin-top:20px;font-style:italic;}
+@media(max-width:800px){
+  .fields{grid-template-columns:1fr;}
+  .fields.c3{grid-template-columns:1fr;}
+  .big-choice{flex-direction:column;}
+  .res-layout{grid-template-columns:1fr;}
+  .res-grid{grid-template-columns:1fr;}
+  .wrap{padding:0 10px 40px;}
+  header{flex-wrap:wrap;gap:8px;}
+  .nav-tabs{margin-left:0;width:100%;}
+  .tab-btn{flex:1;text-align:center;}
+  .logo{font-size:1.4rem;}
+  .logo .sub{display:none;}
+  .nav{flex-wrap:wrap;}
+  .btn-next,.btn-back,.btn-save,.btn-pdf,.btn-reset{font-size:.85rem;padding:9px 14px;}
+  .stepper{overflow-x:auto;padding-bottom:20px;}
+  .st-lbl{font-size:.55rem;}
+  .res-layout{gap:10px;}
+}
+@media(max-width:480px){
+  .fields{grid-template-columns:1fr !important;}
+  .fields.c3{grid-template-columns:1fr !important;}
+  .mat-choice{flex-direction:column;}
+  .hist-grid{grid-template-columns:1fr;}
+  .hist-body{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div><div class="logo" style="display:flex;align-items:center;gap:10px;"><svg width="42" height="42" viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="125" width="120" height="15" fill="#1a2a1a"/><rect x="8" y="112" width="6" height="18" rx="2" fill="#1a4a8a"/><rect x="5" y="126" width="12" height="4" rx="1" fill="#1a3a7a"/><rect x="106" y="112" width="6" height="18" rx="2" fill="#1a4a8a"/><rect x="103" y="126" width="12" height="4" rx="1" fill="#1a3a7a"/><rect x="18" y="108" width="84" height="22" rx="10" fill="#1a2a3a"/><rect x="24" y="112" width="72" height="14" rx="7" fill="#111"/><circle cx="32" cy="119" r="8" fill="#1a2a3a" stroke="#2a3a4a" stroke-width="1.5"/><circle cx="32" cy="119" r="3" fill="#111"/><circle cx="88" cy="119" r="8" fill="#1a2a3a" stroke="#2a3a4a" stroke-width="1.5"/><circle cx="88" cy="119" r="3" fill="#111"/><rect x="24" y="108" width="9" height="22" rx="1" fill="#243444"/><rect x="36" y="108" width="9" height="22" rx="1" fill="#243444"/><rect x="48" y="108" width="9" height="22" rx="1" fill="#243444"/><rect x="60" y="108" width="9" height="22" rx="1" fill="#243444"/><rect x="72" y="108" width="9" height="22" rx="1" fill="#243444"/><rect x="84" y="108" width="9" height="22" rx="1" fill="#243444"/><rect x="22" y="92" width="76" height="18" rx="3" fill="#1a5aaa"/><rect x="26" y="95" width="68" height="12" rx="2" fill="#2a6abb"/><rect x="72" y="68" width="34" height="26" rx="3" fill="#1a5aaa"/><rect x="75" y="71" width="28" height="20" rx="2" fill="#2a6abb"/><line x1="78" y1="73" x2="78" y2="89" stroke="#1a4a9a" stroke-width="1"/><line x1="82" y1="73" x2="82" y2="89" stroke="#1a4a9a" stroke-width="1"/><line x1="86" y1="73" x2="86" y2="89" stroke="#1a4a9a" stroke-width="1"/><line x1="90" y1="73" x2="90" y2="89" stroke="#1a4a9a" stroke-width="1"/><line x1="94" y1="73" x2="94" y2="89" stroke="#1a4a9a" stroke-width="1"/><rect x="100" y="58" width="5" height="18" rx="2" fill="#555"/><ellipse cx="102" cy="57" rx="4" ry="3" fill="#444"/><rect x="34" y="82" width="16" height="14" rx="2" fill="#1a5aaa"/><polygon points="34,8 44,8 48,88 38,88" fill="#2a6abb" opacity="0.6"/><line x1="38" y1="88" x2="34" y2="8" stroke="#1a5aaa" stroke-width="5" stroke-linecap="round"/><line x1="48" y1="88" x2="44" y2="8" stroke="#1a5aaa" stroke-width="5" stroke-linecap="round"/><line x1="34" y1="18" x2="44" y2="18" stroke="#1a4a9a" stroke-width="2"/><line x1="35" y1="30" x2="45" y2="30" stroke="#1a4a9a" stroke-width="2"/><line x1="35" y1="42" x2="45" y2="42" stroke="#1a4a9a" stroke-width="2"/><line x1="36" y1="54" x2="46" y2="54" stroke="#1a4a9a" stroke-width="2"/><line x1="36" y1="66" x2="46" y2="66" stroke="#1a4a9a" stroke-width="2"/><line x1="37" y1="78" x2="47" y2="78" stroke="#1a4a9a" stroke-width="2"/><line x1="34" y1="8" x2="46" y2="30" stroke="#1a4a9a" stroke-width="1"/><line x1="44" y1="8" x2="36" y2="30" stroke="#1a4a9a" stroke-width="1"/><line x1="35" y1="30" x2="46" y2="54" stroke="#1a4a9a" stroke-width="1"/><line x1="45" y1="30" x2="36" y2="54" stroke="#1a4a9a" stroke-width="1"/><line x1="36" y1="54" x2="46" y2="78" stroke="#1a4a9a" stroke-width="1"/><line x1="46" y1="54" x2="36" y2="78" stroke="#1a4a9a" stroke-width="1"/><rect x="30" y="32" width="22" height="18" rx="3" fill="#1a4a9a"/><rect x="33" y="35" width="16" height="12" rx="2" fill="#2a5aaa"/><circle cx="41" cy="41" r="6" fill="#1a3a8a" stroke="#4a8add" stroke-width="1.5"/><circle cx="41" cy="41" r="2.5" fill="#0a2a6a"/><rect x="39" y="50" width="4" height="55" rx="1" fill="#aaaaaa"/><polygon points="37,105 43,105 46,115 41,119 36,115" fill="#666"/><circle cx="37" cy="116" r="3.5" fill="#555"/><circle cx="41" cy="118" r="3.5" fill="#555"/><circle cx="45" cy="116" r="3.5" fill="#555"/><line x1="41" y1="75" x2="70" y2="90" stroke="#1a5aaa" stroke-width="4" stroke-linecap="round"/><line x1="41" y1="72" x2="68" y2="87" stroke="#2a6abb" stroke-width="2" stroke-linecap="round"/><path d="M48 58 Q58 62 65 70 Q70 76 72 82" fill="none" stroke="#cc2200" stroke-width="2" stroke-linecap="round"/><path d="M48 62 Q56 66 63 73 Q69 79 71 86" fill="none" stroke="#0055cc" stroke-width="2" stroke-linecap="round"/><rect x="31" y="5" width="16" height="7" rx="2" fill="#1a4a9a"/><circle cx="39" cy="8" r="5" fill="#1a3a8a" stroke="#4a7acc" stroke-width="1"/><circle cx="39" cy="8" r="2" fill="#0a2870"/><ellipse cx="41" cy="127" rx="5" ry="2" fill="#0a0a0a"/></svg><span>Foratrix</span> <span style="color:var(--txt2);font-weight:400;font-size:.95rem;">· Calcul matériaux</span></div></div>
+  
+  <div class="nav-tabs">
+    <button class="tab-btn active" id="tab-calc" onclick="switchView('calc',this)">⚙ Calcul</button>
+    <button class="tab-btn" id="tab-hist" onclick="switchView('hist',this)"> Historique <span id="hist-count"></span></button>
+  </div>
+</header>
+<div class="view active" id="view-calc">
+  <div class="stepper" id="stepper"></div>
+  <div style="height:24px"></div>
+  <div class="errbox" id="errbox">⚠ <span id="errmsg"></span></div>
+  <div class="panel active" id="panel-0">
+    <div class="card"><div class="card-hd"> Informations générales</div><div class="card-bd"><div class="fields c1"><div class="field"><label>Nom du forage / projet</label><div class="field-row"><input type="text" id="nom_forage" placeholder="ex : F1 — Site Thourotte"><span class="unit">—</span></div></div></div></div></div>
+    <div class="card"><div class="card-hd"> Type de forage</div><div class="card-bd"><div class="big-choice">
+      <div class="choice-btn" id="type-mono" onclick="selectType('mono')"><div class="choice-num" style="font-size:1.6rem">⌀</div><div class="choice-label">Monodiamètre</div><div class="choice-sub">massif + argile + ciment opt.</div></div>
+      <div class="choice-btn selected" id="type-cas1" onclick="selectType('cas1')"><div class="choice-num">1</div><div class="choice-label">1 Tubage</div><div class="choice-sub">1 tubage + cimentation</div></div>
+      <div class="choice-btn" id="type-cas2" onclick="selectType('cas2')"><div class="choice-num">2</div><div class="choice-label">2 Tubages</div><div class="choice-sub">2 tubages + 2 cimentations</div></div>
+    </div></div></div>
+    <div class="nav"><button class="btn-next" onclick="goNext()">Suivant ▶</button><button class="btn-reset" onclick="resetAll()">↺ Nouveau</button></div>
+  </div>
+  <div class="panel" id="panel-mono">
+    <div class="card"><div class="card-hd" style="color:var(--ok)"> Géométrie — Monodiamètre</div><div class="card-bd"><div class="fields">
+      <div class="field"><label>Ø forage</label><div class="field-row"><input type="number" id="m_dfor" placeholder="ex : 250"><span class="unit">mm</span></div></div>
+      <div class="field"><label>DE colonne captante</label><div class="field-row"><input type="number" id="m_dcap" placeholder="ex : 125"><span class="unit">mm</span></div></div>
+      <div class="field"><label>Profondeur totale</label><div class="field-row"><input type="number" id="m_pfond" placeholder="ex : 40"><span class="unit">m</span></div></div>
+    </div></div></div>
+    <div class="card"><div class="card-hd" style="color:var(--MASSIF)"> Massif filtrant</div><div class="card-bd"><div class="fields">
+      <div class="field"><label>Profondeur haut massif</label><div class="field-row"><input type="number" id="m_pm_top" placeholder="ex : 15"><span class="unit">m</span></div></div>
+      <div class="field"><label>Profondeur bas massif</label><div class="field-row"><input type="number" id="m_pm_bot" placeholder="ex : 40"><span class="unit">m</span></div></div>
+    </div>
+    <div class="mat-choice">
+      <div class="mat-btn sel" id="mat-gravier" onclick="selectMat('gravier')"><div class="mn">Gravier</div><div class="ms">ρ = 1,60 T/m³</div></div>
+      <div class="mat-btn" id="mat-billes" onclick="selectMat('billes')"><div class="mn">Billes de verre</div><div class="ms">ρ = 1,53 T/m³</div></div>
+    </div></div></div>
+    <div class="card"><div class="card-hd" style="color:var(--ARGILE)"> Argile — Sobranitè</div><div class="card-bd"><div class="fields">
+      <div class="field"><label>Profondeur haut argile</label><div class="field-row"><input type="number" id="m_pa_top" placeholder="ex : 8"><span class="unit">m</span></div></div>
+      <div class="field"><label>Profondeur bas argile</label><div class="field-row"><input type="number" id="m_pa_bot" placeholder="ex : 15"><span class="unit">m</span></div></div>
+      <div class="field"><label>Masse vol. Sobranitè</label><div class="field-row"><input type="number" id="m_rho_a" value="1.3" step="0.05"><span class="unit">T/m³</span></div></div>
+    </div></div></div>
+    <div class="card"><div class="card-hd" style="color:var(--CIM1)"> Cimentation (optionnelle)</div><div class="card-bd">
+      <div class="toggle-row"><label class="toggle"><input type="checkbox" id="m_with_cim" onchange="toggleMCim()"><span class="toggle-slider"></span></label><span class="toggle-lbl">Inclure une cimentation</span></div>
+      <div id="m_cim_fields" style="display:none;margin-top:12px;"><div class="fields">
+        <div class="field"><label>Haut ciment</label><div class="field-row"><input type="number" id="m_pc_top" placeholder="ex : 0"><span class="unit">m</span></div></div>
+        <div class="field"><label>Bas ciment</label><div class="field-row"><input type="number" id="m_pc_bot" placeholder="ex : 8"><span class="unit">m</span></div></div>
+        <div class="field"><label>Masse vol. coulis</label><div class="field-row"><input type="number" id="m_rho_c" value="1.8" step="0.01"><span class="unit">T/m³</span></div></div>
+        <div class="field"><label>Masse vol. ciment poudre</label><div class="field-row"><input type="number" id="m_rho_ci" value="3.1" step="0.01"><span class="unit">T/m³</span></div></div>
+        <div class="field"><label>Marge</label><div class="field-row"><input type="number" id="m_marge" value="30"><span class="unit">%</span></div></div>
+      </div></div>
+    </div></div>
+    <div class="nav"><button class="btn-back" onclick="goBack()">◀ Retour</button><button class="btn-next" onclick="calculer()">⚡ CALCULER</button></div>
+  </div>
+  <div class="panel" id="panel-1">
+    <div class="card"><div class="card-hd" style="color:var(--CIM1)"> Tubage 1</div><div class="card-bd"><div class="fields c3">
+      <div class="field"><label>Ø forage 1</label><div class="field-row"><input type="number" id="d_for1" placeholder="ex : 610"><span class="unit">mm</span></div></div>
+      <div class="field"><label>DE casing 1</label><div class="field-row"><input type="number" id="de_cas1" placeholder="ex : 406"><span class="unit">mm</span></div></div>
+      <div class="field"><label>Profondeur P₁</label><div class="field-row"><input type="number" id="p1" placeholder="ex : 33"><span class="unit">m</span></div></div>
+    </div></div></div>
+    <div class="card"><div class="card-hd" style="color:var(--CIM1)"> Coulis — Tubage 1</div><div class="card-bd"><div class="fields c3">
+      <div class="field"><label>Masse vol. coulis</label><div class="field-row"><input type="number" id="rho_c1" value="1.8" step="0.01"><span class="unit">T/m³</span></div></div>
+      <div class="field"><label>Masse vol. ciment poudre</label><div class="field-row"><input type="number" id="rho_ci1" value="3.1" step="0.01"><span class="unit">T/m³</span></div></div>
+      <div class="field"><label>Marge</label><div class="field-row"><input type="number" id="marge1" value="30"><span class="unit">%</span></div></div>
+    </div></div></div>
+    <div class="nav"><button class="btn-back" onclick="goBack()">◀ Retour</button><button class="btn-next" onclick="goNext()">Suivant ▶</button></div>
+  </div>
+  <div class="panel" id="panel-2">
+    <div class="card"><div class="card-hd" style="color:var(--CIM2)"> Tubage 2</div><div class="card-bd"><div class="fields c3">
+      <div class="field"><label>Ø forage 2</label><div class="field-row"><input type="number" id="d_for2" placeholder="ex : 375"><span class="unit">mm</span></div></div>
+      <div class="field"><label>DE casing 2</label><div class="field-row"><input type="number" id="de_cas2" placeholder="ex : 219"><span class="unit">mm</span></div></div>
+      <div class="field"><label>Profondeur P₂</label><div class="field-row"><input type="number" id="p2" placeholder="ex : 48"><span class="unit">m</span></div></div>
+    </div></div></div>
+    <div class="card"><div class="card-hd" style="color:var(--CIM2)"> Coulis — Tubage 2</div><div class="card-bd"><div class="fields c3">
+      <div class="field"><label>Masse vol. coulis</label><div class="field-row"><input type="number" id="rho_c2" value="1.8" step="0.01"><span class="unit">T/m³</span></div></div>
+      <div class="field"><label>Masse vol. ciment poudre</label><div class="field-row"><input type="number" id="rho_ci2" value="3.1" step="0.01"><span class="unit">T/m³</span></div></div>
+      <div class="field"><label>Marge</label><div class="field-row"><input type="number" id="marge2" value="30"><span class="unit">%</span></div></div>
+    </div></div></div>
+    <div class="nav"><button class="btn-back" onclick="goBack()">◀ Retour</button><button class="btn-next" onclick="goNext()">Suivant ▶</button></div>
+  </div>
+  <div class="panel" id="panel-3">
+    <div class="card"><div class="card-hd" style="color:var(--ok)"> Zone captante</div><div class="card-bd"><div class="fields">
+      <div class="field"><label>Ø forage 3 (F3)</label><div class="field-row"><input type="number" id="d_for3" placeholder="ex : 250"><span class="unit">mm</span></div></div>
+      <div class="field"><label>DE colonne captante</label><div class="field-row"><input type="number" id="de_cap" placeholder="ex : 168"><span class="unit">mm</span></div></div>
+      <div class="field"><label>Profondeur fond P₃</label><div class="field-row"><input type="number" id="p3" placeholder="ex : 48"><span class="unit">m</span></div></div>
+      <div class="field"><label>Profondeur haut télescopage</label><div class="field-row"><input type="number" id="p_tel" placeholder="ex : 2" step="0.5"><span class="unit">m</span></div></div>
+    </div><div class="hint">Séquence bas→haut : Massif → Argile (opt.) → Ciment (opt.)</div></div></div>
+    <div class="card"><div class="card-hd" style="color:var(--MASSIF)"> Massif filtrant</div><div class="card-bd"><div class="fields">
+      <div class="field"><label>Profondeur haut massif</label><div class="field-row"><input type="number" id="p_massif" placeholder="ex : 30"><span class="unit">m</span></div></div>
+      <div class="field"><label>Marge</label><div class="field-row"><input type="number" id="marge_mat" value="30"><span class="unit">%</span></div></div>
+    </div>
+    <div class="mat-choice">
+      <div class="mat-btn sel" id="mat2-gravier" onclick="selectMat2('gravier')"><div class="mn">Gravier</div><div class="ms">ρ = 1,60 T/m³</div></div>
+      <div class="mat-btn" id="mat2-billes" onclick="selectMat2('billes')"><div class="mn">Billes de verre</div><div class="ms">ρ = 1,53 T/m³</div></div>
+    </div></div></div>
+    <div class="card"><div class="card-hd" style="color:var(--ARGILE)"> Argile — Sobranitè (optionnelle)</div><div class="card-bd">
+      <div class="toggle-row"><label class="toggle"><input type="checkbox" id="aq_with_argile" onchange="toggleAqArgile()"><span class="toggle-slider"></span></label><span class="toggle-lbl">Inclure une couche d'argile</span></div>
+      <div id="aq_argile_fields" style="display:none;margin-top:12px;"><div class="fields">
+        <div class="field"><label>Profondeur haut argile</label><div class="field-row"><input type="number" id="aq_pa_top" placeholder="ex : 25"><span class="unit">m</span></div></div>
+        <div class="field"><label>Profondeur bas argile</label><div class="field-row"><input type="number" id="aq_pa_bot" placeholder="ex : 30"><span class="unit">m</span></div></div>
+        <div class="field"><label>Masse vol. Sobranitè</label><div class="field-row"><input type="number" id="aq_rho_a" value="1.3" step="0.05"><span class="unit">T/m³</span></div></div>
+      </div></div>
+    </div></div>
+    <div class="card"><div class="card-hd" style="color:var(--CIM1)"> Cimentation (optionnelle)</div><div class="card-bd">
+      <div class="toggle-row"><label class="toggle"><input type="checkbox" id="aq_with_cim" onchange="toggleAqCim()"><span class="toggle-slider"></span></label><span class="toggle-lbl">Inclure une cimentation</span></div>
+      <div id="aq_cim_fields" style="display:none;margin-top:12px;"><div class="fields">
+        <div class="field"><label>Profondeur haut ciment</label><div class="field-row"><input type="number" id="aq_pc_top" placeholder="ex : 0"><span class="unit">m</span></div></div>
+        <div class="field"><label>Profondeur bas ciment</label><div class="field-row"><input type="number" id="aq_pc_bot" placeholder="ex : 25"><span class="unit">m</span></div></div>
+        <div class="field"><label>Masse vol. coulis</label><div class="field-row"><input type="number" id="aq_rho_c" value="1.8" step="0.01"><span class="unit">T/m³</span></div></div>
+        <div class="field"><label>Masse vol. ciment poudre</label><div class="field-row"><input type="number" id="aq_rho_ci" value="3.1" step="0.01"><span class="unit">T/m³</span></div></div>
+        <div class="field"><label>Marge</label><div class="field-row"><input type="number" id="aq_marge" value="30"><span class="unit">%</span></div></div>
+      </div></div>
+    </div></div>
+    <div class="nav"><button class="btn-back" onclick="goBack()">◀ Retour</button><button class="btn-next" onclick="calculer()">⚡ CALCULER</button></div>
+  </div>
+  <div class="panel" id="panel-4">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+      <div style="font-family:var(--head);font-size:1.2rem;font-weight:700;color:var(--acc);"> <span id="res-nom"></span></div>
+      <div id="res-type-badge" style="font-size:.72rem;font-family:var(--head);font-weight:700;padding:2px 8px;border-radius:3px;background:var(--bord);color:var(--txt3);"></div>
+      <button class="btn-save" onclick="saveForage()">💾 Sauvegarder</button>
+      <button class="btn-pdf" onclick="exportPDF()">📥 Télécharger PDF</button>
+      
+      <button class="btn-reset" onclick="resetAll()">↺ Nouveau</button>
+    </div>
+    <div class="res-layout">
+      <div class="res-grid" id="res-grid"></div>
+      <div class="schema-card">
+        <div class="schema-hd" style="display:flex;align-items:center;justify-content:space-between;">
+          <span> Coupe schématique</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:.68rem;color:var(--txt2);font-family:var(--mono);">Taille</span>
+            <button onclick="resizeSchema(-40)" style="background:var(--inp);border:1px solid var(--bord);color:var(--txt2);width:22px;height:22px;border-radius:3px;cursor:pointer;font-size:.9rem;line-height:1;">−</button>
+            <button onclick="resizeSchema(40)" style="background:var(--inp);border:1px solid var(--bord);color:var(--txt2);width:22px;height:22px;border-radius:3px;cursor:pointer;font-size:.9rem;line-height:1;">+</button>
+          </div>
+        </div>
+        <div class="schema-inner" id="schema-container"></div>
+        <div class="legend" id="schema-legend"></div>
+      </div>
+    </div>
+    <div class="nav" style="margin-top:10px;"><button class="btn-back" onclick="goBack()">◀ Modifier</button></div>
+  </div>
+</div>
+<div class="view" id="view-hist">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <div style="font-family:var(--head);font-size:1.1rem;font-weight:700;color:var(--acc);"> Forages sauvegardés</div>
+    <button onclick="clearHistory()" class="btn-reset"> Tout effacer</button>
+  </div>
+  <div id="hist-container"></div>
+</div>
+<footer>Foratrix · Made in Spain</footer>
+</div>
+<script>
+const PI=Math.PI;
+let state={type:'cas1',mat:'gravier',mat2:'gravier',currentPanel:'0'};
+let lastCalcData=null;
+const C={TERRAIN:'#e8edf8',TERRAIN2:'#dde4f0',CIM1:'#a0a8b0',CIM2:'#c0c8d0',CAS1:'#1a6a2a',CAS2:'#4aaa5a',CAP:'#1a3a7a',MASSIF:'#f0a020',ARGILE:'#7a4a10',SURFACE:'#1a5aaa',PROF:'#3a4a6a'};
+function getHistory(){try{return JSON.parse(localStorage.getItem('foratrix_v1')||'[]');}catch(e){return[];}}
+function saveHistory(h){localStorage.setItem('foratrix_v1',JSON.stringify(h));updateHistCount();}
+function updateHistCount(){const n=getHistory().length;document.getElementById('hist-count').textContent=n>0?`(${n})`:'';;}
+function switchView(v,btn){document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));document.getElementById('view-'+v).classList.add('active');btn.classList.add('active');if(v==='hist')renderHistory();;if(v==='calc')showPanel('0');}
+function getFlow(){if(state.type==='mono')return['0','mono','4'];if(state.type==='cas1')return['0','1','3','4'];return['0','1','2','3','4'];}
+const stepLabels={'0':'Général','mono':'Monodiamètre','1':'Tubage 1','2':'Tubage 2','3':'Aquifère','4':'Résultats'};
+function renderStepper(){const flow=getFlow(),cur=flow.indexOf(state.currentPanel);const el=document.getElementById('stepper');el.innerHTML='';flow.forEach((id,i)=>{const done=i<cur,active=i===cur;if(i>0){const l=document.createElement('div');l.className='st-line';l.style.cssText=`flex:1;height:2px;background:${done?'#3dba7c':'#2e3a55'};`;el.appendChild(l);}const w=document.createElement('div');w.className='st-wrap';const d=document.createElement('div');d.className='st-dot';d.style.cssText=`border:2px solid ${active?'#f0a020':done?'#3dba7c':'#2e3a55'};background:${active?'#f0a020':done?'#3dba7c':'#1b2235'};color:${active||done?'#0f1420':'#8a9ab8'};`;d.textContent=done?'✓':(i+1);const lbl=document.createElement('div');lbl.className='st-lbl';lbl.style.color=active?'#f0a020':done?'#3dba7c':'#8a9ab8';lbl.textContent=stepLabels[id];w.appendChild(d);w.appendChild(lbl);el.appendChild(w);});}
+function showPanel(id){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('panel-'+id).classList.add('active');state.currentPanel=id;renderStepper();window.scrollTo({top:0,behavior:'smooth'});}
+function goNext(){clearErr();if(!validateCurrent())return;const f=getFlow(),i=f.indexOf(state.currentPanel);if(i<f.length-1)showPanel(f[i+1]);}
+function goBack(){clearErr();const f=getFlow(),i=f.indexOf(state.currentPanel);if(i>0)showPanel(f[i-1]);}
+function validateCurrent(){
+  const p=state.currentPanel;
+  if(p==='0')return true;
+  if(p==='mono'){const dfor=v('m_dfor'),dcap=v('m_dcap'),pfond=v('m_pfond'),pt=v('m_pm_top'),pb=v('m_pm_bot'),at=v('m_pa_top'),ab=v('m_pa_bot');if(!dfor||!dcap||!pfond)return err('Remplissez la géométrie.');if(dcap>=dfor)return err('DE captant < Ø forage.');if(!pt&&pt!==0||pb===null)return err('Remplissez les profondeurs massif.');if(pb>pfond)return err('Bas massif > profondeur fond.');if(pt>=pb)return err('Haut massif < bas massif.');if(at===null||ab===null)return err('Remplissez les profondeurs argile.');if(at>=ab)return err('Haut argile < bas argile.');if(document.getElementById('m_with_cim').checked){const ct=v('m_pc_top'),cb=v('m_pc_bot');if(ct===null||cb===null)return err('Remplissez les profondeurs ciment.');if(ct>=cb)return err('Haut ciment < bas ciment.');}return true;}
+  if(p==='1'){const df=v('d_for1'),dc=v('de_cas1'),pp=v('p1');if(!df||!dc||!pp)return err('Remplissez casing 1.');if(dc>=df)return err('DE cas1 < Ø for1.');if(pp<=0)return err('P₁ > 0.');return true;}
+  if(p==='2'){const df=v('d_for2'),dc=v('de_cas2'),pp=v('p2'),p1=v('p1'),dc1=v('de_cas1');if(!df||!dc||!pp)return err('Remplissez casing 2.');if(dc>=df)return err('DE cas2 < Ø for2.');if(dc>=dc1)return err('DE cas2 < DE cas1.');if(pp<=p1)return err('P₂ > P₁.');return true;}
+  if(p==='3'){
+    const df3=v('d_for3'),dcap=v('de_cap'),p3=v('p3'),pm=v('p_massif'),ptel=v('p_tel');
+    const pRef=state.type==='cas2'?v('p2'):v('p1');const dRef=state.type==='cas2'?v('de_cas2'):v('de_cas1');
+    if(!df3||!dcap||!p3||pm===null)return err('Remplissez les champs zone captante.');
+    if(df3>=dRef)return err(`Ø for3 (${df3}mm) < DE casing (${dRef}mm).`);
+    if(dcap>=df3)return err('DE captant < Ø for3.');
+    if(p3<=pRef)return err(`P₃ > P fin casing (${pRef}m).`);
+    if(ptel!==null&&ptel>=pRef)return err(`Télescopage (${ptel}m) < P fin casing (${pRef}m).`);
+    if(pm>=p3)return err('Haut massif < P₃.');
+    const elA=document.getElementById('aq_with_argile'),elC=document.getElementById('aq_with_cim');
+    if(elA&&elA.checked){const at=v('aq_pa_top'),ab=v('aq_pa_bot');if(at===null||ab===null)return err('Profondeurs argile manquantes.');if(at>=ab)return err('Haut argile < bas argile.');if(ab>pm)return err('Bas argile <= haut massif.');}
+    if(elC&&elC.checked){const ct=v('aq_pc_top'),cb=v('aq_pc_bot');if(ct===null||cb===null)return err('Profondeurs ciment manquantes.');if(ct>=cb)return err('Haut ciment < bas ciment.');if(elA&&elA.checked&&cb>v('aq_pa_top'))return err('Bas ciment <= haut argile.');}
+    return true;
+  }
+  return true;
+}
+function calculer(){
+  clearErr();if(!validateCurrent())return;
+  const results=[],nom=document.getElementById('nom_forage').value||'Sans nom';
+  const data={type:state.type,nom,date:new Date().toLocaleDateString('fr-FR'),mat:state.mat,mat2:state.mat2,params:{}};
+  if(state.type==='mono'){
+    const dfor=v('m_dfor')/1000,dcap=v('m_dcap')/1000,pfond=v('m_pfond');
+    const pt=v('m_pm_top'),pb=v('m_pm_bot'),rho_m=state.mat==='gravier'?1.6:1.53;
+    const mg=(v('m_marge')||30)/100;
+    const bb_m=state.mat==='gravier'?1.2:1.0;
+    const vm=PI/4*(dfor*dfor-dcap*dcap)*(pb-pt),mm=vm*rho_m,mm_mg=mm*(1+mg);
+    results.push({titre:('Massif - '+(state.mat==='gravier'?'Gravier':'Billes')),col:'MASSIF',rows:[{l:'Volume',v:fmt(vm,2),u:'m³'},{l:'Masse',v:fmt(mm,2),u:'T'},{sep:true},{l:'marge',v:'',u:'',cls:'sub'},{l:'Masse',v:fmt(mm_mg,2),u:'T',cls:'big'},{l:'Big-bags',v:Math.ceil(mm_mg/bb_m),u:`BB (${bb_m}T/BB)`,cls:'big'},{l:'Sacs 25kg',v:Math.ceil(mm_mg*1000/25),u:'sacs',cls:'big'}]});
+    const at=v('m_pa_top'),ab=v('m_pa_bot'),rho_a=v('m_rho_a');
+    const va=PI/4*(dfor*dfor-dcap*dcap)*(ab-at),ma=va*rho_a,ma_mg=ma*(1+mg);
+    results.push({titre:'Argile — Sobranitè',col:'ARGILE',rows:[{l:'Volume',v:fmt(va,2),u:'m³'},{l:'Masse',v:fmt(ma,2),u:'T'},{sep:true},{l:'marge',v:'',u:'',cls:'sub'},{l:'Masse',v:fmt(ma_mg,2),u:'T',cls:'big'},{l:'Sacs 25kg',v:Math.ceil(ma_mg*1000/25),u:'sacs',cls:'big'}]});
+    if(document.getElementById('m_with_cim').checked){const ct=v('m_pc_top'),cb=v('m_pc_bot'),rc=v('m_rho_c'),rci=v('m_rho_ci'),mgc=v('m_marge')/100;const vc=PI/4*(dfor*dfor-dcap*dcap)*(cb-ct);results.push({titre:'Cimentation',col:'CIM1',rows:[{l:'Volume',v:fmt(vc,2),u:'m³'},...rowsCim(calcCim(vc,rc,rci,mgc),mgc)]});}
+    data.params={dfor:v('m_dfor'),dcap:v('m_dcap'),pfond,pm_top:pt,pm_bot:pb,pa_top:at,pa_bot:ab,rho_a:v('m_rho_a'),ciment:document.getElementById('m_with_cim').checked?{top:v('m_pc_top'),bot:v('m_pc_bot')}:null};
+  } else {
+    const df1=v('d_for1')/1000,dc1=v('de_cas1')/1000,p1=v('p1'),rc1=v('rho_c1'),rci1=v('rho_ci1'),mg1=v('marge1')/100;
+    const vol1=PI/4*(df1*df1-dc1*dc1)*p1,r1=calcCim(vol1,rc1,rci1,mg1);
+    results.push({titre:'Cimentation - Tubage 1',col:'CIM1',rows:[{l:'Volume annulaire',v:fmt(vol1,2),u:'m³'},...rowsCim(r1,mg1)]});
+    data.params={df1:v('d_for1'),dc1:v('de_cas1'),p1};
+    if(state.type==='cas2'){
+      const df2=v('d_for2')/1000,dc2=v('de_cas2')/1000,p2=v('p2'),rc2=v('rho_c2'),rci2=v('rho_ci2'),mg2=v('marge2')/100;
+      const vh=PI/4*(dc1*dc1-dc2*dc2)*p1,vb=PI/4*(df2*df2-dc2*dc2)*(p2-p1),r2=calcCim(vh+vb,rc2,rci2,mg2);
+      results.push({titre:'Cimentation - Tubage 2',col:'CIM2',rows:[{l:'Vol. haut (0-P1)',v:fmt(vh,2),u:'m³'},{l:'Vol. bas (P1-P2)',v:fmt(vb,2),u:'m³'},{sep:true},...rowsCim(r2,mg2)]});
+      data.params.df2=v('d_for2');data.params.dc2=v('de_cas2');data.params.p2=p2;
+    }
+    const pRef=state.type==='cas2'?v('p2'):v('p1'),dcRef=(state.type==='cas2'?v('de_cas2'):v('de_cas1'))/1000;
+    const df3=v('d_for3')/1000,dcap=v('de_cap')/1000,p3=v('p3'),pm=v('p_massif'),rho_m=state.mat2==='gravier'?1.6:1.53;
+    const bb_cas=state.mat2==='gravier'?1.2:1.0;
+    const mg_mat=(v('marge_mat')||30)/100;
+    const ptel=v('p_tel')!==null?v('p_tel'):pRef;
+    let vt=0,vf=0;
+    if(pm<pRef){vt=PI/4*(dcRef*dcRef-dcap*dcap)*(pRef-pm);vf=PI/4*(df3*df3-dcap*dcap)*(p3-pRef);}
+    else{vf=PI/4*(df3*df3-dcap*dcap)*(p3-pm);}
+    const vm=vt+vf,vm_m=vm*(1+mg_mat),masse_m=vm*rho_m,masse_m_mg=masse_m*(1+mg_mat);
+    results.push({titre:`Massif — ${state.mat2==='gravier'?'Gravier':'Billes'}`,col:'MASSIF',rows:[{l:'Vol. telescopage',v:fmt(vt,2),u:'m³'},{l:'Vol. dans F3',v:fmt(vf,2),u:'m³'},{sep:true},{l:'Volume total',v:fmt(vm,2),u:'m³'},{l:'Masse',v:fmt(masse_m,2),u:'T'},{sep:true},{l:'marge',v:'',u:'',cls:'sub'},{l:'Volume',v:fmt(vm_m,2),u:'m³',cls:'hi'},{l:'Masse',v:fmt(masse_m_mg,2),u:'T',cls:'big'},{l:'Big-bags',v:Math.ceil(masse_m_mg/bb_cas),u:`BB (${bb_cas}T/BB)`,cls:'big'},{l:'Sacs 25kg',v:Math.ceil(masse_m_mg*1000/25),u:'sacs',cls:'big'}]});
+    data.params.df3=v('d_for3');data.params.dcap=v('de_cap');data.params.p3=p3;data.params.pm=pm;data.params.ptel=v('p_tel');
+    if(document.getElementById('aq_with_argile')&&document.getElementById('aq_with_argile').checked){
+      const at=v('aq_pa_top'),ab=v('aq_pa_bot'),rho_a=v('aq_rho_a')||1.3;
+      const va=PI/4*(df3*df3-dcap*dcap)*(ab-at),ma=va*rho_a,ma_mg=ma*(1+mg_mat);
+      results.push({titre:'Argile — Sobranitè (aquifère)',col:'ARGILE',rows:[{l:'Volume',v:fmt(va,2),u:'m³'},{l:'Masse',v:fmt(ma,2),u:'T'},{sep:true},{l:'marge',v:'',u:'',cls:'sub'},{l:'Masse',v:fmt(ma_mg,2),u:'T',cls:'big'},{l:'Sacs 25kg',v:Math.ceil(ma_mg*1000/25),u:'sacs',cls:'big'}]});
+      data.params.aq_argile={top:at,bot:ab,rho:rho_a};
+    }
+    if(document.getElementById('aq_with_cim')&&document.getElementById('aq_with_cim').checked){
+      const ct=v('aq_pc_top'),cb=v('aq_pc_bot'),rc=v('aq_rho_c'),rci=v('aq_rho_ci'),mg=v('aq_marge')/100;
+      const vc=PI/4*(df3*df3-dcap*dcap)*(cb-ct),r=calcCim(vc,rc,rci,mg);
+      results.push({titre:'Cimentation (aquifère)',col:'CIM1',rows:[{l:'Volume',v:fmt(vc,2),u:'m³'},...rowsCim(r,mg)]});
+      data.params.aq_ciment={top:ct,bot:cb};
+    }
+  }
+  data.results=results;lastCalcData=data;renderResults(results,data);showPanel('4');
+}
+function calcCim(vol,rc,rci,mg){const mc=(1-rc)/(1/rci-1)*vol,rec=(rci-rc)/(rc-1),veL=mc*rec*1000;return{vol,mc,veL,mcm:mc*(1+mg),vem:veL*(1+mg),pal:mc*(1+mg)*1000/1600,sacs:Math.ceil(mc*(1+mg)*1000/25)};}
+function rowsCim(r,mg){return[{l:'Masse ciment',v:fmt(r.mc,2),u:'T'},{l:'Volume eau',v:fmt(r.veL,2),u:'L'},{sep:true},{l:'marge',v:'',u:'',cls:'sub'},{l:'Masse ciment',v:fmt(r.mcm,2),u:'T',cls:'hi'},{l:'Volume eau',v:fmt(r.vem,2),u:'L',cls:'hi'},{sep:true},{l:'Palettes 1.6T',v:fmt(r.pal,2),u:'pal',cls:'big'},{l:'Sacs 25kg',v:r.sacs,u:'sacs',cls:'big'}];}
+function fmt(n,d){return Number(n).toFixed(d);}
+function v(id){const el=document.getElementById(id);if(!el)return null;const val=parseFloat(el.value.replace(',','.'));return isNaN(val)?null:val;}
+function err(msg){const b=document.getElementById('errbox');document.getElementById('errmsg').textContent=msg;b.classList.add('show');b.scrollIntoView({behavior:'smooth',block:'center'});return false;}
+function clearErr(){document.getElementById('errbox').classList.remove('show');}
+function renderResults(results,data){
+  const tl={mono:'Monodiamètre',cas1:'1 Tubage',cas2:'2 Tubages'};
+  document.getElementById('res-nom').textContent=data.nom;
+  document.getElementById('res-type-badge').textContent=tl[data.type]||'';
+  const grid=document.getElementById('res-grid');grid.innerHTML='';
+  results.forEach(r=>{const b=document.createElement('div');b.className='res-block';let html=`<div class="res-hd" style="color:${C[r.col]||C.CIM1}">${r.titre}</div><div class="res-bd">`;r.rows.forEach(rw=>{if(rw.sep){html+='<div class="res-sep"></div>';return;}if(r.col==='ARGILE'&&rw.l==='Big-bags')return;html+=`<div class="res-row ${rw.cls||''}"><span class="res-lbl">${rw.l}</span><span><span class="res-val">${rw.v}</span><span class="res-unit">${rw.u}</span></span></div>`;});html+='</div>';b.innerHTML=html;grid.appendChild(b);});
+  document.getElementById('schema-container').innerHTML=buildSchema(data,schemaW);
+  document.getElementById('schema-legend').innerHTML=getLegendItems(data.type).map(l=>`<div class="leg-item"><div class="leg-dot" style="background:${l.c};opacity:0.85"></div>${l.t}</div>`).join('');
+}
+function buildSchema(data,W){
+  const p=data.params,type=data.type,cx=W/2;
+  let pMax,rCap=3;
+  if(type==='mono')pMax=p.pfond;else pMax=p.p3||(type==='cas2'?p.p2+10:p.p1+10);
+  const PPM=Math.min((W*0.72)/pMax,14),H=pMax*PPM+80,y0=38;
+  let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  if(type==='mono'){
+    const sc=(cx-12)/(p.dfor/2),rF=(p.dfor/2)*sc;rCap=Math.max((p.dcap/2)*sc,3);
+    s+=rect(cx-rF,y0,rF*2,p.pfond*PPM,C.TERRAIN,1,'#dde4f0',0.3);
+    const ymT=y0+p.pm_top*PPM,hmM=(p.pm_bot-p.pm_top)*PPM;
+    s+=rect(cx-rF,ymT,rF-rCap,hmM,C.MASSIF,0.8);s+=rect(cx+rCap,ymT,rF-rCap,hmM,C.MASSIF,0.8);
+    const yaT=y0+p.pa_top*PPM,haA=(p.pa_bot-p.pa_top)*PPM;
+    s+=rect(cx-rF,yaT,rF-rCap,haA,C.ARGILE,0.85);s+=rect(cx+rCap,yaT,rF-rCap,haA,C.ARGILE,0.85);
+    if(p.ciment){const ycT=y0+p.ciment.top*PPM,hcC=(p.ciment.bot-p.ciment.top)*PPM;s+=rect(cx-rF,ycT,rF-rCap,hcC,C.CIM1,0.85);s+=rect(cx+rCap,ycT,rF-rCap,hcC,C.CIM1,0.85);}
+    const ep=Math.max(rCap*0.3,1.5);s+=rr(cx-rCap,y0,ep,p.pfond*PPM,1,C.CAP,0.9);s+=rr(cx+rCap-ep,y0,ep,p.pfond*PPM,1,C.CAP,0.9);
+    s+=pL(W,y0,'0m',C.PROF,false,true);s+=pL(W,y0+p.pfond*PPM,`${p.pfond}m`,C.PROF,false,false);
+  } else {
+    const EP=5,EPC=4,SA=0.14,MA=14;;
+    const p1=p.p1,p2=type==='cas2'?p.p2:p.p1,p3=p.p3||(p2+10),pm=p.pm||p2;
+    const pFC=type==='cas2'?p2:p1,pT=(p.ptel!==undefined&&p.ptel<pFC)?p.ptel:pFC;
+    const rCI=5;rCap=rCI+EPC;
+    const mmx=p.df3&&p.dcap?(p.df3-p.dcap)/2:40,mpx=Math.max(mmx*SA,MA),rF3=rCap+mpx;
+    const rD2i=rF3,rD2=rD2i+EP;
+    const c2bm=type==='cas2'&&p.df2&&p.dc2?(p.df2-p.dc2)/2:60,c2bp=Math.max(c2bm*SA,MA),rF2=rD2+c2bp;
+    const c2hm=p.dc1&&p.dc2?(p.dc1-p.dc2)/2:30,c2hp=Math.max(c2hm*SA,MA),rD1=rD2+c2hp;
+    const rD1e=rD1+EP,c1m=p.df1&&p.dc1?(p.df1-p.dc1)/2:100,c1p=Math.max(c1m*SA,MA),rF1=rD1e+c1p;
+    const e1=EP,e2=EP,eC=EPC;
+    // Terrains
+    s+=rect(cx-rF1,y0,rF1*2,p1*PPM,C.TERRAIN,1,'#dde4f0',0.3);
+    const rF2d=type==='cas2'?rF2:rD1e;s+=rect(cx-rF2d,y0+p1*PPM,rF2d*2,(p2-p1)*PPM,C.TERRAIN,1,'#dde4f0',0.3);
+    s+=rect(cx-rF3,y0+pFC*PPM,rF3*2,(p3-pFC)*PPM,C.TERRAIN2,1,'#e0e8f0',0.3);
+    // Cim1
+    s+=rect(cx-rF1,y0,rF1-rD1e,p1*PPM,C.CIM1,0.85);s+=rect(cx+rD1e,y0,rF1-rD1e,p1*PPM,C.CIM1,0.85);
+    // Cas1
+    s+=rr(cx-rD1e,y0,e1,p1*PPM,1,C.CAS1,0.92);s+=rr(cx+rD1,y0,e1,p1*PPM,1,C.CAS1,0.92);
+    if(type==='cas2'){
+      const cw2h=rD1-rD2;if(cw2h>0){s+=rect(cx-rD1,y0,cw2h,p1*PPM,C.CIM2,0.85);s+=rect(cx+rD2,y0,cw2h,p1*PPM,C.CIM2,0.85);}
+      const cw2b=rF2-rD2;if(cw2b>0){s+=rect(cx-rF2,y0+p1*PPM,cw2b,(p2-p1)*PPM,C.CIM2,0.85);s+=rect(cx+rD2,y0+p1*PPM,cw2b,(p2-p1)*PPM,C.CIM2,0.85);}
+      s+=rr(cx-rD2,y0,e2,p2*PPM,1,C.CAS2,0.92);s+=rr(cx+rD2i,y0,e2,p2*PPM,1,C.CAS2,0.92);
+    }
+    const rCRI=type==='cas2'?rD2i:rD1;
+    if(pT<pFC){const mwT=rCRI-rCap;if(mwT>0){s+=rect(cx-rCRI,y0+pT*PPM,mwT,(pFC-pT)*PPM,C.MASSIF,0.75);s+=rect(cx+rCap,y0+pT*PPM,mwT,(pFC-pT)*PPM,C.MASSIF,0.75);}s+=rr(cx-rCap,y0+pT*PPM,eC,(pFC-pT)*PPM,1,C.CAP,0.9);s+=rr(cx+rCI,y0+pT*PPM,eC,(pFC-pT)*PPM,1,C.CAP,0.9);}
+    const pmF=Math.max(pm,pFC),mwF=rF3-rCap;if(mwF>0&&pmF<p3){s+=rect(cx-rF3,y0+pmF*PPM,mwF,(p3-pmF)*PPM,C.MASSIF,0.75);s+=rect(cx+rCap,y0+pmF*PPM,mwF,(p3-pmF)*PPM,C.MASSIF,0.75);}
+    if(p.aq_argile){const haA2=(p.aq_argile.bot-p.aq_argile.top)*PPM;if(haA2>0){const rOA=p.aq_argile.top<pFC?rCRI:rF3;s+=rect(cx-rOA,y0+p.aq_argile.top*PPM,rOA-rCap,haA2,C.ARGILE,0.9);s+=rect(cx+rCap,y0+p.aq_argile.top*PPM,rOA-rCap,haA2,C.ARGILE,0.9);}}
+    if(p.aq_ciment){const hcC2=(p.aq_ciment.bot-p.aq_ciment.top)*PPM;if(hcC2>0){const rOC=p.aq_ciment.top<pFC?rCRI:rF3;s+=rect(cx-rOC,y0+p.aq_ciment.top*PPM,rOC-rCap,hcC2,C.CIM1,0.9);s+=rect(cx+rCap,y0+p.aq_ciment.top*PPM,rOC-rCap,hcC2,C.CIM1,0.9);}}
+    s+=rr(cx-rCap,y0+pFC*PPM,eC,(p3-pFC)*PPM,1,C.CAP,0.9);s+=rr(cx+rCI,y0+pFC*PPM,eC,(p3-pFC)*PPM,1,C.CAP,0.9);
+    s+=rr(cx-rCap,y0+p3*PPM,rCap*2,4,1,C.CAP,0.9);
+    s+=pL(W,y0,'0m',C.SURFACE,false,true);s+=pL(W,y0+p1*PPM,`P₁=${p1}m`,C.PROF,true,false);
+    if(type==='cas2')s+=pL(W,y0+p2*PPM,`P₂=${p2}m`,C.PROF,false,true);
+    if(pm>0&&pm<p3)s+=pL(W,y0+pm*PPM,`${pm}m`,C.MASSIF,true,false);
+    s+=pL(W,y0+p3*PPM,`P₃=${p3}m`,C.PROF,true,false);
+  }
+  s+=`<line x1="4" y1="${y0}" x2="${W-4}" y2="${y0}" stroke="${C.SURFACE}" stroke-width="1.5" stroke-dasharray="5 3"/>`;
+  s+=`<text x="${cx}" y="${y0-7}" text-anchor="middle" fill="${C.SURFACE}" font-size="10" font-family="Barlow Condensed,sans-serif" font-weight="700">Surface 0 m</text>`;
+  s+='</svg>';return s;
+}
+function rect(x,y,w,h,fill,op=1,stroke='none',sop=1){if(w<=0||h<=0)return'';return`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${Math.max(w,0).toFixed(1)}" height="${Math.max(h,0).toFixed(1)}" fill="${fill}" opacity="${op}" stroke="${stroke}" stroke-opacity="${sop}" stroke-width="0.5"/>`;}
+function rr(x,y,w,h,rx,fill,op=1){if(w<=0||h<=0)return'';return`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${Math.max(w,0).toFixed(1)}" height="${Math.max(h,0).toFixed(1)}" rx="${rx}" fill="${fill}" opacity="${op}"/>`;}
+function pL(W,y,label,col,right=false,bold=false){const ly=y-2,anchor=right?'end':'start',lx=right?W-6:6;return`<line x1="4" y1="${y.toFixed(1)}" x2="${(W-4).toFixed(1)}" y2="${y.toFixed(1)}" stroke="${col}" stroke-width="0.5" stroke-dasharray="3 2" opacity="0.5"/><text x="${lx}" y="${ly.toFixed(1)}" text-anchor="${anchor}" fill="${col}" font-size="10" font-family="Barlow Condensed,sans-serif" font-weight="${bold?700:400}" opacity="0.9">${label}</text>`;}
+function getLegendItems(type){const it=[];if(type==='mono'){it.push({c:C.CAP,t:'Captant'},{c:C.MASSIF,t:'Massif'},{c:C.ARGILE,t:'Argile'});const el=document.getElementById('m_with_cim');if(el&&el.checked)it.push({c:C.CIM1,t:'Ciment'});}else{it.push({c:C.CAS1,t:'Tubage 1'});if(type==='cas2')it.push({c:C.CAS2,t:'Tubage 2'});it.push({c:C.CIM1,t:'Cim. 1'});if(type==='cas2')it.push({c:C.CIM2,t:'Cim. 2'});it.push({c:C.MASSIF,t:'Massif'});const elA=document.getElementById('aq_with_argile');if(elA&&elA.checked)it.push({c:C.ARGILE,t:'Argile aq.'});const elC=document.getElementById('aq_with_cim');if(elC&&elC.checked)it.push({c:C.CIM1,t:'Ciment aq.'});it.push({c:C.CAP,t:'Captant'});}return it;}
+function saveForage(){if(!lastCalcData)return;const h=getHistory();lastCalcData.id=Date.now();lastCalcData.schemaSvg=buildSchema(lastCalcData,180);h.unshift(lastCalcData);if(h.length>50)h.pop();saveHistory(h);const btn=document.querySelector('.btn-save');const orig=btn.textContent;btn.textContent='✅ Sauvegardé!';setTimeout(()=>btn.textContent=orig,2000);}
+function renderHistory(){const h=getHistory(),el=document.getElementById('hist-container');if(!h.length){el.innerHTML='<div class="hist-empty">⛏ Aucun forage sauvegardé.<br><br>Calculez et cliquez sur  Sauvegarder</div>';return;}const tl={mono:'Monodiamètre',cas1:'1 Tubage',cas2:'2 Tubages'};let html='<div class="hist-grid">';h.forEach(f=>{html+=`<div class="hist-card" onclick="viewForage(${f.id})" style="cursor:pointer;"><div class="hist-hd"><div><div class="hist-name">⛏ ${f.nom}</div><div class="hist-meta">${f.date} · ${tl[f.type]||f.type}</div></div><div class="hist-type">${tl[f.type]||f.type}</div></div><div class="hist-body"><div style="background:#0d1525;border-radius:4px;padding:6px;">${f.schemaSvg||''}</div><div class="hist-data-rows">`;if(f.results)f.results.forEach(r=>{html+=`<div class="hist-sec" style="color:${C[r.col]||C.CIM1}">${r.titre}</div>`;const bR=r.rows.find(rw=>rw.cls==='big'&&rw.u==='T');if(bR)html+=`<div class="hist-row"><span class="hist-rl">Masse</span><span class="hist-rv">${bR.v} T</span></div>`;const sR=r.rows.find(rw=>rw.u==='sacs');if(sR)html+=`<div class="hist-row"><span class="hist-rl">Sacs 25kg</span><span class="hist-rv">${sR.v}</span></div>`;});html+=`</div></div><div class="hist-actions"><button class="btn-edit" onclick="loadAndEdit(${f.id})">✏️ Modifier</button><button class="btn-del" onclick="deleteForage(${f.id})">❌ Supprimer</button></div></div>`;});html+='</div>';el.innerHTML=html;}
+function loadAndEdit(id){const f=getHistory().find(x=>x.id===id);if(!f)return;resetAll();document.getElementById('nom_forage').value=f.nom||'';selectType(f.type);const p=f.params;if(f.type==='mono'){setV('m_dfor',p.dfor);setV('m_dcap',p.dcap);setV('m_pfond',p.pfond);setV('m_pm_top',p.pm_top);setV('m_pm_bot',p.pm_bot);setV('m_pa_top',p.pa_top);setV('m_pa_bot',p.pa_bot);setV('m_rho_a',p.rho_a||1.3);selectMat(f.mat||'gravier');if(p.ciment){document.getElementById('m_with_cim').checked=true;toggleMCim();setV('m_pc_top',p.ciment.top);setV('m_pc_bot',p.ciment.bot);}}else{setV('d_for1',p.df1);setV('de_cas1',p.dc1);setV('p1',p.p1);if(f.type==='cas2'){setV('d_for2',p.df2);setV('de_cas2',p.dc2);setV('p2',p.p2);}setV('d_for3',p.df3);setV('de_cap',p.dcap);setV('p3',p.p3);setV('p_tel',p.ptel);setV('p_massif',p.pm);if(p.aq_argile){document.getElementById('aq_with_argile').checked=true;toggleAqArgile();setV('aq_pa_top',p.aq_argile.top);setV('aq_pa_bot',p.aq_argile.bot);setV('aq_rho_a',p.aq_argile.rho);}if(p.aq_ciment){document.getElementById('aq_with_cim').checked=true;toggleAqCim();setV('aq_pc_top',p.aq_ciment.top);setV('aq_pc_bot',p.aq_ciment.bot);}selectMat2(f.mat2||'gravier');}document.getElementById('tab-calc').click();showPanel('0');}
+function setV(id,val){const el=document.getElementById(id);if(el&&val!==null&&val!==undefined)el.value=val;}
+function deleteForage(id){const h=getHistory().filter(f=>f.id!==id);saveHistory(h);renderHistory();}
+function clearHistory(){if(confirm('Supprimer tous les forages ?')){localStorage.removeItem('foratrix_v1');updateHistCount();renderHistory();}}
+function selectType(t){state.type=t;['mono','cas1','cas2'].forEach(x=>document.getElementById('type-'+x).classList.toggle('selected',x===t));renderStepper();}
+function selectMat(m){state.mat=m;['gravier','billes'].forEach(x=>document.getElementById('mat-'+x).classList.toggle('sel',x===m));}
+function selectMat2(m){state.mat2=m;['gravier','billes'].forEach(x=>document.getElementById('mat2-'+x).classList.toggle('sel',x===m));}
+function toggleMCim(){document.getElementById('m_cim_fields').style.display=document.getElementById('m_with_cim').checked?'block':'none';}
+function toggleAqArgile(){document.getElementById('aq_argile_fields').style.display=document.getElementById('aq_with_argile').checked?'block':'none';}
+function toggleAqCim(){document.getElementById('aq_cim_fields').style.display=document.getElementById('aq_with_cim').checked?'block':'none';}
+function resetAll(){state={type:'cas1',mat:'gravier',mat2:'gravier',currentPanel:'0'};lastCalcData=null;document.querySelectorAll('input[type=number]').forEach(i=>{const d={rho_c1:'1.8',rho_c2:'1.8',rho_ci1:'3.1',rho_ci2:'3.1',marge1:'30',marge2:'30',m_rho_a:'1.3',m_rho_c:'1.8',m_rho_ci:'3.1',m_marge:'30',marge_mat:'30',aq_rho_a:'1.3',aq_rho_c:'1.8',aq_rho_ci:'3.1',aq_marge:'30'};i.value=d[i.id]||'';});document.getElementById('nom_forage').value='';document.getElementById('m_with_cim').checked=false;document.getElementById('m_cim_fields').style.display='none';if(document.getElementById('aq_with_argile')){document.getElementById('aq_with_argile').checked=false;document.getElementById('aq_argile_fields').style.display='none';}if(document.getElementById('aq_with_cim')){document.getElementById('aq_with_cim').checked=false;document.getElementById('aq_cim_fields').style.display='none';}selectType('cas1');selectMat('gravier');selectMat2('gravier');clearErr();showPanel('0');}
+let schemaW=340;
+function resizeSchema(delta){schemaW=Math.max(180,Math.min(600,schemaW+delta));if(lastCalcData)document.getElementById('schema-container').innerHTML=buildSchema(lastCalcData,schemaW);}
+renderStepper();updateHistCount();document.addEventListener('keydown',e=>{if(e.key==='Enter')goNext();});
+
+function removeAccents(str){
+  if(!str) return str;
+  return str.replace(/[àâä]/g,'a')
+            .replace(/[éèêë]/g,'e')
+            .replace(/[îï]/g,'i')
+            .replace(/[ôö]/g,'o')
+            .replace(/[ùûü]/g,'u')
+            .replace(/[ç]/g,'c')
+            .replace(/[ÀÂÄ]/g,'A')
+            .replace(/[ÉÈÊË]/g,'E')
+            .replace(/[ÎÏ]/g,'I')
+            .replace(/[ÔÖ]/g,'O')
+            .replace(/[ÙÛÜ]/g,'U')
+            .replace(/[Ç]/g,'C')
+            .replace(/è/g,'e').replace(/ê/g,'e')
+            .replace(/é/g,'e').replace(/à/g,'a')
+            .replace(/ô/g,'o').replace(/û/g,'u')
+            .replace(/î/g,'i').replace(/ç/g,'c')
+            .replace(/—/g,'-').replace(/–/g,'-')
+            .replace(/«/g,'"').replace(/»/g,'"');
+}
+function exportPDF(){
+  if(!lastCalcData){alert('Effectuez un calcul avant.');return;}
+  if(typeof window.jspdf==='undefined'){
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload=function(){
+      var s2=document.createElement('script');
+      s2.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js';
+      s2.onload=function(){_doPDF();};
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s);
+  } else {_doPDF();}
+}
+
+function _doPDF(){
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',putOnlyUsedFonts:true});
+  var data=lastCalcData, p=data.params;
+  var tl={mono:'Monodiamètre',cas1:'1 Tubage',cas2:'2 Tubages'};
+  var W=210,mL=18,mR=18,cW=W-mL-mR;
+  var apost=String.fromCharCode(39);
+  var y=0;
+
+  var C_DARK=[15,20,32],C_ORANGE=[240,160,32],C_BLUE=[26,90,170];
+  var C_LIGHT=[240,244,250];
+  var colBG={CIM1:[160,168,176],CIM2:[192,200,208],MASSIF:[240,160,32],ARGILE:[122,74,16],CAP:[26,58,122]};
+  var colTX={CIM1:[20,20,20],CIM2:[20,20,20],MASSIF:[20,20,20],ARGILE:[255,255,255],CAP:[255,255,255]};
+
+  // ── HELPERS ──
+  function sous_titre(txt,y_pos){
+    doc.setTextColor(C_BLUE[0],C_BLUE[1],C_BLUE[2]);
+    doc.setFontSize(11);doc.setFont('helvetica','bold');
+    doc.text(txt,mL,y_pos);
+    doc.setDrawColor(C_BLUE[0],C_BLUE[1],C_BLUE[2]);
+    doc.setLineWidth(0.3);
+    doc.line(mL,y_pos+2,mL+cW,y_pos+2);
+    return y_pos+7;
+  }
+  function bloc_titre(txt,bg,tx,y_pos){
+    doc.setFillColor(bg[0],bg[1],bg[2]);
+    doc.roundedRect(mL,y_pos,cW,8,1,1,'F');
+    doc.setTextColor(tx[0],tx[1],tx[2]);
+    doc.setFontSize(9.5);doc.setFont('helvetica','bold');
+    doc.text(txt,mL+4,y_pos+5.5);
+    return y_pos+12;
+  }
+  function para(txt,y_pos){
+    doc.setTextColor(30,30,30);
+    doc.setFontSize(9);doc.setFont('helvetica','normal');
+    var words=txt.split(' ');
+    var lines=[],cur='';
+    for(var wi=0;wi<words.length;wi++){
+      var test=cur?(cur+' '+words[wi]):words[wi];
+      if(doc.getTextWidth(test)>cW){lines.push(cur);cur=words[wi];}
+      else cur=test;
+    }
+    if(cur)lines.push(cur);
+    for(var li=0;li<lines.length;li++){
+      var line=lines[li];
+      if(li<lines.length-1){
+        var lw2=line.split(' ');
+        if(lw2.length>1){
+          var tw=doc.getTextWidth(line.replace(/ /g,''));
+          var gap=(cW-tw)/(lw2.length-1);
+          var x=mL;
+          for(var lw3=0;lw3<lw2.length;lw3++){
+            doc.text(lw2[lw3],x,y_pos+li*5);
+            x+=doc.getTextWidth(lw2[lw3])+gap;
+          }
+        } else { doc.text(line,mL,y_pos+li*5); }
+      } else { doc.text(line,mL,y_pos+li*5); }
+    }
+    return y_pos+lines.length*5+5;
+  }
+  function formule_box(segments_arr,vars_arr,y_pos){
+    var line_h=7;
+    var h=segments_arr.length*line_h+5;
+    doc.setFillColor(235,242,255);doc.setDrawColor(C_BLUE[0],C_BLUE[1],C_BLUE[2]);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(mL,y_pos,cW,h,1,1,'FD');
+    var fy=y_pos+6;
+    for(var li2=0;li2<segments_arr.length;li2++){
+      var segs=segments_arr[li2];var fx=mL+5;
+      for(var si=0;si<segs.length;si++){
+        var seg=segs[si];
+        if(seg.s==='sub'){doc.setFontSize(6.5);doc.setFont('courier','bold');doc.setTextColor(C_DARK[0],C_DARK[1],C_DARK[2]);doc.text(seg.t,fx,fy+1.5);fx+=doc.getTextWidth(seg.t);}
+        else if(seg.s==='sup'){doc.setFontSize(6.5);doc.setFont('courier','bold');doc.setTextColor(C_DARK[0],C_DARK[1],C_DARK[2]);doc.text(seg.t,fx,fy-2);fx+=doc.getTextWidth(seg.t);}
+        else if(seg.s==='unit'){doc.setFontSize(8);doc.setFont('helvetica','italic');doc.setTextColor(80,80,100);doc.text(seg.t,fx,fy);fx+=doc.getTextWidth(seg.t);}
+        else{doc.setFontSize(9);doc.setFont('courier','bold');doc.setTextColor(C_DARK[0],C_DARK[1],C_DARK[2]);doc.text(seg.t,fx,fy);fx+=doc.getTextWidth(seg.t);}
+        doc.setFontSize(9);doc.setFont('courier','bold');
+      }
+      fy+=line_h;
+    }
+    y_pos+=h+6;
+    if(vars_arr&&vars_arr.length){
+      doc.setFontSize(8);doc.setFont('helvetica','italic');doc.setTextColor(90,90,90);
+      doc.text('Notation :',mL+2,y_pos);y_pos+=5;
+      for(var vi=0;vi<vars_arr.length;vi++){
+        var vx=mL+5;
+        var vsegs=vars_arr[vi][0];
+        for(var vs=0;vs<vsegs.length;vs++){
+          if(vsegs[vs].s==='sub'){doc.setFontSize(6.5);doc.setFont('courier','bold');doc.setTextColor(C_BLUE[0],C_BLUE[1],C_BLUE[2]);doc.text(vsegs[vs].t,vx,y_pos+1.5);vx+=doc.getTextWidth(vsegs[vs].t);doc.setFontSize(8);}
+          else{doc.setFontSize(8);doc.setFont('courier','bold');doc.setTextColor(C_BLUE[0],C_BLUE[1],C_BLUE[2]);doc.text(vsegs[vs].t,vx,y_pos);vx+=doc.getTextWidth(vsegs[vs].t);}
+        }
+        vx+=2;
+        doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(60,60,60);
+        doc.text(vars_arr[vi][1],vx,y_pos);
+        y_pos+=4.5;
+      }
+    }
+    return y_pos+5;
+  }
+  function check_page(y_pos,needed){
+    if(y_pos>(needed||255)){doc.addPage();return 22;}
+    return y_pos;
+  }
+  var sq=String.fromCharCode(178);
+
+  // ── Matériaux présents ──
+  var hasArgile=data.type==='mono'||(p.aq_argile!=null);
+  var hasCim=data.type!=='mono';
+  var hasCimMono=data.type==='mono'&&p.ciment!=null;
+  var matL=(data.type==='mono'?data.mat:data.mat2)==='gravier'?'Gravier filtrant':'Billes de verre';
+  var rhoM=(data.type==='mono'?data.mat:data.mat2)==='gravier'?'1,60':'1,53';
+  var bbM=(data.type==='mono'?data.mat:data.mat2)==='gravier'?'1,2 T/big-bag':'1,0 T/big-bag';
+  var rhoA=String(p.rho_a||(p.aq_argile?p.aq_argile.rho:1.3)||1.3).replace('.',',');
+
+  // ══ EN-TETE ══
+  doc.setFillColor(C_DARK[0],C_DARK[1],C_DARK[2]);
+  doc.rect(0,0,210,38,'F');
+  doc.setFillColor(C_ORANGE[0],C_ORANGE[1],C_ORANGE[2]);
+  doc.rect(0,38,210,1.5,'F');
+  doc.setTextColor(C_ORANGE[0],C_ORANGE[1],C_ORANGE[2]);
+  doc.setFontSize(16);doc.setFont('helvetica','bold');
+  doc.text('NOTE DE CALCUL DES MATERIAUX DU FORAGE',mL,15);
+  doc.setFontSize(9);doc.setTextColor(160,185,220);doc.setFont('helvetica','normal');
+  doc.text('Projet : '+data.nom+'   |   Type : '+(tl[data.type]||data.type)+'   |   Date : '+data.date,mL,25);
+  
+  y=46;
+
+  // Note préliminaire (pas "avertissement")
+  doc.setFillColor(255,248,230);doc.setDrawColor(C_ORANGE[0],C_ORANGE[1],C_ORANGE[2]);
+  doc.roundedRect(mL,y,cW,9,2,2,'FD');
+  doc.setTextColor(120,80,10);
+  doc.setFontSize(8);doc.setFont('helvetica','bolditalic');
+  var noteW=doc.getTextWidth('Note — ');
+  doc.text('Note — ',mL+4,y+4);
+  doc.setFont('helvetica','italic');
+  doc.text('Ce calcul neglige les epaisseurs de l'+apost+'equipement du forage.',mL+4+noteW,y+4);
+  doc.text('Les volumes calcules sont des volumes geometriques bruts.',mL+4,y+7.5);
+  y+=22;
+
+  // ══ 1. OBJET ══
+  y=sous_titre('1.  Objet de la note',y);
+  var typeDesc=data.type==='mono'?'monodiametre (sans tubage)':data.type==='cas1'?'1 casing avec zone captante':'2 casings avec zone captante';
+  var matList=matL.toLowerCase()+' pour le massif filtrant';
+  if(hasCim||hasCimMono) matList+=', coulis de cimentation';
+  if(hasArgile) matList+=', argile Sobranite';
+  y=para('La presente note a pour objet le dimensionnement quantitatif des materiaux necessaires a l'+apost+'equipement du forage '+data.nom+'. Le forage est de type '+typeDesc+'. Les materiaux pris en compte dans ce calcul sont : '+matList+'.', y);
+
+  // ══ 2. METHODE ══
+  y=check_page(y);
+  y=sous_titre('2.  Methode de calcul par materiau',y);
+  var secNum=1;
+
+  // ── 2.x MASSIF ──
+  y=check_page(y);
+  y=bloc_titre('2.'+secNum+'  Massif filtrant — '+matL, colBG['MASSIF'], colTX['MASSIF'], y);
+  secNum++;
+  y=para('Le massif filtrant est mis en place dans l'+apost+'espace annulaire entre la paroi foree et la colonne captante. Il assure le drainage de l'+apost+'eau de l'+apost+'aquifere vers la crepine. Le volume annulaire est calcule par :', y);
+  y=formule_box([
+    [{t:'V = ',s:'n'},{t:'pi',s:'n'},{t:'/4 x (D',s:'n'},{t:'for',s:'sub'},{t:sq,s:'n'},{t:' - D',s:'n'},{t:'e,cap',s:'sub'},{t:sq,s:'n'},{t:') x h',s:'n'},{t:'  [m',s:'unit'},{t:'3',s:'sup'},{t:']',s:'unit'}],
+  ],[
+    [[{t:'V',s:'n'}],': volume de materiau [m3]'],
+    [[{t:'D',s:'n'},{t:'for',s:'sub'}],': diametre du forage [m]'],
+    [[{t:'D',s:'n'},{t:'e,cap',s:'sub'}],': diametre exterieur de la colonne captante [m]'],
+    [[{t:'h',s:'n'}],': hauteur de la zone de massif [m]'],
+  ],y);
+  y=para('La masse est calculee par M = V x rho, avec rho = '+rhoM+' T/m3 pour le '+matL.toLowerCase()+'. Une marge de securite est appliquee pour tenir compte des pertes et des irregularites de la paroi de forage. Le conditionnement est en big-bags ('+bbM+') et en sacs de 25 kg.', y);
+
+  // ── 2.x ARGILE ──
+  if(hasArgile){
+    y=check_page(y);
+    y=bloc_titre('2.'+secNum+'  Argile de colmatage — Sobranite', colBG['ARGILE'], colTX['ARGILE'], y);
+    secNum++;
+    y=para('L'+apost+'argile Sobranite (billes 4-5 mm, fournisseur PLM Services) est mise en place comme bouchon d'+apost+'etancheite entre le massif filtrant et la cimentation. Elle empeche toute migration du coulis vers la zone captante. La formule du volume est identique a celle du massif :', y);
+    y=formule_box([
+      [{t:'V = ',s:'n'},{t:'pi',s:'n'},{t:'/4 x (D',s:'n'},{t:'for',s:'sub'},{t:sq,s:'n'},{t:' - D',s:'n'},{t:'e,cap',s:'sub'},{t:sq,s:'n'},{t:') x h',s:'n'},{t:'  [m',s:'unit'},{t:'3',s:'sup'},{t:']',s:'unit'}],
+    ],[
+      [[{t:'V',s:'n'}],': volume d'+apost+'argile [m3]'],
+      [[{t:'D',s:'n'},{t:'for',s:'sub'}],': diametre du forage a la cote de l'+apost+'argile [m]'],
+      [[{t:'D',s:'n'},{t:'e,cap',s:'sub'}],': diametre exterieur de la colonne captante [m]'],
+      [[{t:'h',s:'n'}],': epaisseur de la couche d'+apost+'argile [m]'],
+    ],y);
+    y=para('La masse volumique retenue est rho = '+rhoA+' T/m3. L'+apost+'argile est conditionnee en sacs de 25 kg. La marge de securite s'+apost+'applique de la meme facon que pour le massif filtrant.', y);
+  }
+
+  // ── 2.x CIMENTATION ──
+  if(hasCim||hasCimMono){
+    y=check_page(y);
+    y=bloc_titre('2.'+secNum+'  Cimentation annulaire', colBG['CIM1'], colTX['CIM1'], y);
+    secNum++;
+    y=para('La cimentation vise a isoler hydrauliquement les differentes couches geologiques traversees et a assurer le maintien mecanique du tubage. Le coulis est injecte dans l'+apost+'espace annulaire entre le forage et le casing. Le volume annulaire est calcule par :', y);
+    y=formule_box([
+      [{t:'V',s:'n'},{t:'ann',s:'sub'},{t:' = ',s:'n'},{t:'pi',s:'n'},{t:'/4 x (D',s:'n'},{t:'for',s:'sub'},{t:sq,s:'n'},{t:' - D',s:'n'},{t:'e,cas',s:'sub'},{t:sq,s:'n'},{t:') x L',s:'n'},{t:'  [m',s:'unit'},{t:'3',s:'sup'},{t:']',s:'unit'}],
+    ],[
+      [[{t:'V',s:'n'},{t:'ann',s:'sub'}],': volume annulaire a cimenter [m3]'],
+      [[{t:'D',s:'n'},{t:'for',s:'sub'}],': diametre du forage [m]'],
+      [[{t:'D',s:'n'},{t:'e,cas',s:'sub'}],': diametre exterieur du casing [m]'],
+      [[{t:'L',s:'n'}],': longueur du tubage [m]'],
+    ],y);
+    y=check_page(y);
+    y=para('La composition du coulis est definie par la masse volumique cible du laitier et la masse volumique du ciment en poudre. Le dosage en ciment sec est obtenu par :', y);
+    y=formule_box([
+      [{t:'m',s:'n'},{t:'c',s:'sub'},{t:' = [(1 - ',s:'n'},{t:'rho',s:'n'},{t:'l',s:'sub'},{t:') / (1/',s:'n'},{t:'rho',s:'n'},{t:'c',s:'sub'},{t:' - 1)] x V',s:'n'},{t:'ann',s:'sub'},{t:'  [T]',s:'unit'}],
+    ],[
+      [[{t:'m',s:'n'},{t:'c',s:'sub'}],': masse de ciment en poudre [T]'],
+      [[{t:'rho',s:'n'},{t:'l',s:'sub'}],': masse volumique du laitier [T/m3]'],
+      [[{t:'rho',s:'n'},{t:'c',s:'sub'}],': masse volumique du ciment en poudre [T/m3]'],
+    ],y);
+    y=para('Le rapport eau/ciment et le volume d'+apost+'eau de gachage sont calcules par :', y);
+    y=formule_box([
+      [{t:'E/C = (',s:'n'},{t:'rho',s:'n'},{t:'c',s:'sub'},{t:' - ',s:'n'},{t:'rho',s:'n'},{t:'l',s:'sub'},{t:') / (',s:'n'},{t:'rho',s:'n'},{t:'l',s:'sub'},{t:' - 1,0)',s:'n'}],
+      [{t:'V',s:'n'},{t:'eau',s:'sub'},{t:' = m',s:'n'},{t:'c',s:'sub'},{t:' x E/C x 1000',s:'n'},{t:'  [L]',s:'unit'}],
+    ],[
+      [[{t:'E/C',s:'n'}],': rapport eau sur ciment (sans unite)'],
+      [[{t:'V',s:'n'},{t:'eau',s:'sub'}],': volume d'+apost+'eau de gachage [L]'],
+    ],y);
+    y=para('Le conditionnement du ciment est en palettes de 1,6 T (64 sacs de 25 kg) et en sacs de 25 kg.', y);
+  }
+
+  // ══ 3. PARAMETRES ══
+  y=check_page(y,200);
+  y=sous_titre('3.  Parametres retenus pour ce calcul',y);
+  var paramRows=[
+    ['Type de forage', tl[data.type]||data.type],
+    ['Materiau massif filtrant', matL],
+    ['Masse volumique massif', rhoM+' T/m3'],
+  ];
+  if(hasArgile) paramRows.push(['Masse volumique argile Sobranite', rhoA+' T/m3']);
+  if(hasCim||hasCimMono){
+    paramRows.push(['Masse volumique coulis ciment', String(p.rho_c||1.8).replace('.',',')+' T/m3']);
+    paramRows.push(['Masse volumique ciment poudre', String(p.rho_ci||3.1).replace('.',',')+' T/m3']);
+  }
+  paramRows.push(['Marge de securite', '+30 %']);
+  paramRows.push(['Conditionnement argile', 'Sacs 25 kg']);
+  paramRows.push(['Conditionnement massif', 'Big-bags + sacs 25 kg']);
+  if(hasCim||hasCimMono) paramRows.push(['Conditionnement ciment', 'Palettes 1,6T + sacs 25 kg']);
+  doc.autoTable({
+    startY:y, head:[['Parametre','Valeur retenue']], body:paramRows,
+    margin:{left:mL,right:mR},
+    styles:{fontSize:9,cellPadding:3},
+    headStyles:{fillColor:C_DARK,textColor:[255,255,255],fontStyle:'bold'},
+    alternateRowStyles:{fillColor:C_LIGHT},
+    columnStyles:{0:{cellWidth:95,fontStyle:'bold'},1:{}}
+  });
+  y=doc.lastAutoTable.finalY+8;
+
+  // ══ 4. RESULTATS ══
+  y=check_page(y,200);
+  y=sous_titre('4.  Resultats des calculs',y);
+  y+=2;
+  data.results.forEach(function(r){
+    y=check_page(y,240);
+    var bg=colBG[r.col]||[80,80,80];
+    var tx=colTX[r.col]||[255,255,255];
+    doc.setFillColor(bg[0],bg[1],bg[2]);
+    doc.roundedRect(mL,y,cW,7,1,1,'F');
+    doc.setTextColor(tx[0],tx[1],tx[2]);
+    doc.setFontSize(9);doc.setFont('helvetica','bold');
+    doc.text(removeAccents(r.titre),mL+3,y+5);
+    y+=9;
+    var rows=r.rows.filter(function(rw){return !rw.sep&&rw.l&&!(r.col==='ARGILE'&&rw.l==='Big-bags');});
+    doc.autoTable({
+      startY:y,body:rows.map(function(rw){return[removeAccents(rw.l),rw.v+' '+rw.u];}),
+      margin:{left:mL,right:mR},
+      styles:{fontSize:8.5,cellPadding:2.5},
+      alternateRowStyles:{fillColor:C_LIGHT},
+      columnStyles:{0:{cellWidth:120,textColor:[30,40,60]},1:{fontStyle:'bold',halign:'right',textColor:[30,40,60]}},
+      didParseCell:function(d){
+        var rw=rows[d.row.index];if(!rw)return;
+        if(d.column.index===1){
+          if(rw.cls==='big'){d.cell.styles.textColor=[20,120,50];d.cell.styles.fontStyle='bold';}
+          else if(rw.cls==='hi'){d.cell.styles.textColor=[160,100,10];d.cell.styles.fontStyle='bold';}
+        }
+        if(rw.cls==='sub'){d.cell.styles.textColor=[150,150,150];d.cell.styles.fontStyle='italic';}
+      }
+    });
+    y=doc.lastAutoTable.finalY+6;
+  });
+
+  // ══ PIED DE PAGE ══
+  var np=doc.internal.getNumberOfPages();
+  for(var i=1;i<=np;i++){
+    doc.setPage(i);
+    doc.setFillColor(C_DARK[0],C_DARK[1],C_DARK[2]);
+    doc.rect(0,287,210,10,'F');
+    doc.setDrawColor(C_ORANGE[0],C_ORANGE[1],C_ORANGE[2]);
+    doc.setLineWidth(0.3);doc.line(0,287,210,287);
+    doc.setTextColor(160,180,210);
+    doc.setFontSize(7);doc.setFont('helvetica','normal');
+    doc.text('Foratrix  |  Note de calcul des materiaux  |  '+data.nom+'  |  Made in Spain',mL,293);
+    doc.text('Page '+i+' / '+np,196,293,{align:'right'});
+  }
+  doc.save('Foratrix_'+data.nom.replace(/[^a-zA-Z0-9]/g,'_')+'.pdf');
+}
+
+
+function viewForage(id){
+  var f=getHistory().find(function(x){return x.id===id;});
+  if(!f||!f.results)return;
+  // Restaurer lastCalcData et afficher résultats directement
+  lastCalcData=f;
+  document.getElementById('tab-calc').click();
+  renderResults(f.results,f);
+  showPanel('4');
+}
+
+</script>
+</body>
+</html>
